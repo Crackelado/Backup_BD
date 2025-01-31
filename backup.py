@@ -1,22 +1,48 @@
 #! python3.10
 
+# Importa as classes "run" e "PIPE" do módulo "subprocess", responsável para importar consultas feitas no terminal linux (shell) e passar para variável
 from subprocess import run, PIPE
+
+# Importa classe "datetime" do módulo "datetime", responsável para pegar datas e transformar em texto conforme necessário
 from datetime import datetime
 
-# Função realizar pesquisa
+# Função realizar pesquisa de arquivo de backup
+# As "caminho" (pasta para pesquisar), "tempo" (acrescenta atributos na pesquisa de data e hora antes do nome do arquivo) e "caminho_comp" (acrescenta o restante do atalho pois, ao pesquisar, mostra somente o nome do arquivo)
 def listar(caminho, tempo='--full-time', caminho_comp=''):
-    grupo = run(['ls', '-t', tempo, caminho], stderr=PIPE, stdout=PIPE)
-    grupo = grupo.stdout.decode('utf-8').split('\n')
-    grupo = [caminho_comp + s for s in grupo if '.rar' in s]
 
-    return grupo
+	# Realiza pesquisa na pasta específica
+	# Complemento "-t" é utilizado para ordenar os arquivos dos criados recentemente
+    	grupo = run(['ls', '-t', tempo, caminho], stderr=PIPE, stdout=PIPE)
 
+	# Converte os dados da pesquisa em texto e transforma em um array, com o indicador de quebra de linha como final do texto ("\n")
+    	grupo = grupo.stdout.decode('utf-8').split('\n')
+
+	# Loop que pega somente arquivos com extensão ".rar". É acrescentado o caminho completo da pasta antes do nome do arquivo
+    	grupo = [caminho_comp + s for s in grupo if '.rar' in s]
+
+	# Função devolve um array com origem de onde estão os arquivos
+    	return grupo
+
+# Variável que armazena texto de término, com quebra de linha ("\n"), para escrita no arquivo ".log"
 echo = 'Backup concluído!\n'
+
+# Variável para armazenar caminho do arquivo ".log"
 log = '/home/usuario/Documents/Luiz2023/Automacao/automacao.log'
+
+# Variável para armazenar todos os dados da data atual (mês, dia, ano, ...), que é representada no terminal shell
 dataText = run(['date'], stderr=PIPE, stdout=PIPE)
+
+# Variável para armazenar a data atual (%ano(4 dígitos)-%mês-%dia)
 data = datetime.today().strftime('%Y-%m-%d')
+
+# Variável para armazenar caminho de onde serão salvos os arquivos de backup, já mapeados no computador
 atalho = '/mnt/backup/bkp SPData/novo'
+
+# Variável para armazenar caminho dos arquivos de backup do servidor, já mapeados no computador
 atalho2 = '/mnt/banco/'
+
+# Variável para armazenar caminho dos arquivos de backup gerado por outro computador na rede, já mapeados no computador
+" Ao utilizar "{}" no texto, pode ser substituído acrescentando uma formatação
 atalho3 = '/mnt/tmp/sghspdata1962_{}-2000.rar'
 
 # Criar pastas para montar pastas de rede e local, caso não existam
@@ -25,12 +51,14 @@ run(['mkdir', '/mnt/banco'])
 run(['mkdir', '/mnt/tmp'])
 
 # Montar unidades de rede ou partição local
-run(['mount', '-t', 'cifs', '//10.150.200.19/banco', '/mnt/banco', '-o', 'username=adm,password=vacatuça,iocharset=utf8'])
+run(['mount', '-t', 'cifs', '//10.150.200.19/banco', '/mnt/banco', '-o', 'username=****,password=****,iocharset=utf8'])
 run(['mount', '-t', 'ntfs-3g', 'UUID=98921C06921BE790', '/mnt/backup'])
-run(['mount', '-t', 'cifs', '//10.150.200.4/c$/banco/backup', '/mnt/tmp', '-o', 'username=ti03,password=ti3991,iocharset=utf8'])
+run(['mount', '-t', 'cifs', '//10.150.200.4/c$/banco/backup', '/mnt/tmp', '-o', 'username=****,password=****,iocharset=utf8'])
 
-# Apagar todos os backups para não encher HD do Painel
+# Cria um array de todos os backups realiados pelo computador da rede
 lista = listar(atalho2, tempo='', caminho_comp=atalho2)
+
+# 
 lista.reverse()
 
 # Realizar o processo de backup, apenas dos arquivos inexistentes
