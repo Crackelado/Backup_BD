@@ -100,7 +100,7 @@ temp = []
 # Loop para realizar o processo de backup, apenas dos arquivos inexistentes
 for i in temp2:
 
-	# Comando que realiza backup com limite de tráfego de rede a 100 kbps
+	# Comando que realiza backup com limite de tráfego de rede a 100 kbps. Substitui as "{}" pela data do loop
 	run(['rsync', '-vh', '-u', '--progress', '--bwlimit=100', atalho3.format(i), atalho])
 
 	# Aumenta quantidade da variável para ser utilizada no arquivo ".log"
@@ -130,18 +130,34 @@ for i in lista[:30]:
 		# Acrescenta no array nome do arquivo acrescido de símbolo de quebra de linha ("\n")
 		temp.append(i + '\n')
 
-# Acrescenta no array mensagem 
+# Acrescenta no array mensagem de finalização do backup e símbolo de quebra de linha ("\n")
 temp.append(echo + '\n')
+
+# Acrescenta no array a quantidade de arquivos que foram copiados ("{}" <> contador).
 temp.append('A quantidade de arquivos de backups já salvos é de: {} rar\'s'.format(contador) + '\n\n')
+
+# Subsitui a variável pelos dados uso do HD de backup/local
 lista = run(['df', '-h', atalho], stderr=PIPE, stdout=PIPE)
+
+# Acrescenta dados, de uso do HD de backup/local, no array
 temp += lista.stdout.decode('utf-8')
+
+# Acrescenta no array símbolo de quebra de linha ("\n")
 temp.append('\n')
+
+# Acrescenta dados antigos do arquivo ".log", fazendo que apareça depois dos dados atuais
 temp += r
+
+# Abre o arquivo ".log", como escrita, e associa com a variável. Quando aberto não pode ser manipulado por outro programa 
 f = open(log, 'w')
+
+# Faz a gravação das linhas do arquivo de log
 f.writelines(temp)
+
+# Fecha arquivo para que possa ser editado por outros programas
 f.close()
 
-# Desmontar unidades
+# Desmonta as unidades
 run(['umount', '/mnt/backup'])
 run(['umount', '/mnt/banco'])
 run(['umount', '/mnt/tmp'])
