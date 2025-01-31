@@ -42,7 +42,7 @@ atalho = '/mnt/backup/bkp SPData/novo'
 atalho2 = '/mnt/banco/'
 
 # Variável para armazenar caminho dos arquivos de backup gerado por outro computador na rede, já mapeados no computador
-" Ao utilizar "{}" no texto, pode ser substituído acrescentando uma formatação
+# Ao utilizar "{}" no texto, pode ser substituído por outro
 atalho3 = '/mnt/tmp/sghspdata1962_{}-2000.rar'
 
 # Criar pastas para montar pastas de rede e local, caso não existam
@@ -58,46 +58,79 @@ run(['mount', '-t', 'cifs', '//10.150.200.4/c$/banco/backup', '/mnt/tmp', '-o', 
 # Cria um array de todos os backups realiados pelo computador da rede
 lista = listar(atalho2, tempo='', caminho_comp=atalho2)
 
-# 
+# Inverte a lista para começar dos arquivos mais antigos primeiro
 lista.reverse()
 
-# Realizar o processo de backup, apenas dos arquivos inexistentes
+# Loop para percorrer nome dos arquivos do array
 for i in lista:
-    run(['rsync', '-vh', '-u', '--progress', '--bwlimit=100', i, atalho])
-    run(['rm', i])
+	
+	# Realizar o processo de backup, apenas dos arquivos inexistentes e limita o tráfego à 100 kbps ("--bwlimit=100")
+    	run(['rsync', '-vh', '-u', '--progress', '--bwlimit=100', i, atalho])
 
-# Captura uma lista de todos os arquivos salvos na pasta backup/local
+	# Apaga arquivo do computador da rede que realiza backup para não encher HD
+    	run(['rm', i])
+
+# Variável que cria um array de todos os arquivos salvos na pasta backup/local. Possui o mesmo nome da variável anterior e, como os dados de antes não serão utilizados mais durante o script, ela é reaproveitada para liberar espaço na memória
 lista = listar(atalho)
+
+# Variável para armazenar a quantidade de arquivos no array "lista"
 contador = len(lista)
+
+# Variável para armazenar array com as datas, que se econtram no nome dos arquivos de backup, na quantidade de 30 registros
 lista2 = [s.split('_')[1].split('-')[0] for s in lista[:30]]
+
+# Modifica a variável de array para texto e armazena todas as datas
 lista2 = ''.join(lista2)
 
-# Captura uma lista de todos os arquivos salvos na pasta backup/servidor
+# Variável para armazenar array de todos os arquivos salvos na pasta backup/servidor
 temp = listar('/mnt/tmp', tempo='')
+
+# Realiza o filtro para obter somente as datas, transformando em outro array com quantidade de 20 registros
 temp = [s.split('_')[1].split('-')[0] for s in temp[:20]]
 
 # Pegar a lista somente dos que não foram feito os backups
 temp2 = [s for s in temp if s not in lista2]
+
+# Inverte o array para começar a realizar o backup dos mais antigos primeiro
 temp2.reverse()
+
+# Redefine variável para reaproveitamento
 temp = []
 
-# Realizar o processo de backup, apenas dos arquivos inexistentes
+# Loop para realizar o processo de backup, apenas dos arquivos inexistentes
 for i in temp2:
+
+	# Comando que realiza backup com limite de tráfego de rede a 100 kbps
 	run(['rsync', '-vh', '-u', '--progress', '--bwlimit=100', atalho3.format(i), atalho])
+
+	# Aumenta quantidade da variável para ser utilizada no arquivo ".log"
 	contador += 1
 
+# Redefine variável com lista de todos os arquivos salvos no backup/local
 lista = listar(atalho)
 
-# Abrir o arquivo de log para escrever a saída do backup
+# Abre o arquivo ".log", como somente leitura, e associa com a variável. Quando aberto não pode ser manipulado por outro programa
 f = open(log, 'r')
+
+# Faz a leitura das linhas do arquivo e joga na variável array
 r = f.readlines()
+
+# Fecha arquivo para que possa ser editado por outros programas
 f.close()
+
+# Acrescenta na variável array, como primeiro registro, a data do terminal shell adquirida anteriormente, acrescido de símbolo de quebra de linha ("\n")
 temp.append(dataText.stdout.decode('utf-8').split('\n')[0] + '\n')
 
+# Loop para percorrer array em apenas 30 registros
 for i in lista[:30]:
-    if data in i:
-        temp.append(i + '\n')
-        
+
+	# Se o arquivo que foi feito o backup tiver a mesma data do dia, é acrescentado no array
+    	if data in i:
+
+		# Acrescenta no array nome do arquivo acrescido de símbolo de quebra de linha ("\n")
+		temp.append(i + '\n')
+
+# Acrescenta no array mensagem 
 temp.append(echo + '\n')
 temp.append('A quantidade de arquivos de backups já salvos é de: {} rar\'s'.format(contador) + '\n\n')
 lista = run(['df', '-h', atalho], stderr=PIPE, stdout=PIPE)
